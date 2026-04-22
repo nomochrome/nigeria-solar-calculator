@@ -2,7 +2,7 @@
 
 A free, open-source solar energy sizing and cost estimation tool built specifically for the Nigerian market.
 
-**[🔗 Try it live →](https://YOUR-USERNAME.github.io/nigeria-solar-calculator)**
+**[🔗 Try it live →](https://YOUR-nomochrome.github.io/nigeria-solar-calculator)**
 
 ![Solar Calculator Screenshot](screenshot.png)
 
@@ -100,7 +100,7 @@ Prices are indicative mid-market estimates. Always get fresh quotes — prices c
 Contributions are very welcome. Here's how:
 
 **Reporting bugs or suggesting features**
-1. Go to the [Issues tab](https://github.com/YOUR-USERNAME/nigeria-solar-calculator/issues)
+1. Go to the [Issues tab](https://github.com/YOUR-nomochrome/nigeria-solar-calculator/issues)
 2. Click **New Issue**
 3. Describe the bug or feature request clearly
 
