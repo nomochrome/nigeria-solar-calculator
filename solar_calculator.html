@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Load Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sun: #D4641A;
+    --sun-light: #FDF2EB;
+    --sun-dark: #A84A10;
+    --green: #1A7A4A;
+    --green-light: #E6F4ED;
+    --green-dark: #0F4F30;
+    --blue: #0D4F8C;
+    --blue-light: #E6EEF8;
+    --blue-mid: #1A6FBF;
+    --gold: #E8A000;
+    --gold-light: #FFF8E6;
+    --teal: #0A7A6E;
+    --teal-light: #E6F5F3;
+    --dark: #1A1A1A;
+    --mid: #444;
+    --grey: #777;
+    --light: #F8F7F5;
+    --border: #E0DDD8;
+    --white: #FFFFFF;
+    --red: #C0392B;
+    --red-light: #FDF0EE;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.12);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--sun-dark) 0%, var(--sun) 60%, #F0A050 100%);
+    padding: 36px 24px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-sun {
+    font-size: 48px; line-height: 1;
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(22px, 5vw, 34px);
+    color: #fff;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header p {
+    color: rgba(255,255,255,0.88);
+    font-size: 13px;
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* ── SECTION CARD ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-top: 24px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    color: #fff;
+  }
+  .card-header.orange  { background: var(--sun); }
+  .card-header.green   { background: var(--green); }
+  .card-header.blue    { background: var(--blue); }
+  .card-header.dark    { background: var(--dark); }
+  .card-header.gold    { background: var(--gold); color: var(--dark); }
+  .card-header .icon   { font-size: 18px; }
+  .card-body           { padding: 20px; }
+
+  /* ── FORM ELEMENTS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label {
+    font-size: 12px; font-weight: 500;
+    color: var(--grey); text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .form-group input, .form-group select {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--dark);
+    background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--sun);
+    box-shadow: 0 0 0 3px rgba(255,107,26,0.12);
+  }
+  .hint {
+    font-size: 11px; color: var(--grey); font-style: italic; margin-top: 2px;
+  }
+
+  /* ── APPLIANCE TABLE ── */
+  .appliance-controls {
+    display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+    align-items: center; justify-content: space-between;
+  }
+  .appliance-controls-right { display: flex; gap: 8px; }
+  .cat-filter {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .cat-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.15s;
+    color: var(--mid);
+  }
+  .cat-btn.active {
+    background: var(--sun); border-color: var(--sun); color: #fff;
+  }
+
+  .table-wrap { overflow-x: auto; }
+  #appTable { min-width: 820px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--blue);
+    color: #fff;
+    padding: 10px 10px;
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    border-right: 1px solid rgba(255,255,255,0.15);
+  }
+  thead th:first-child { text-align: left; border-radius: 0; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:hover { background: var(--light); }
+  tbody tr.cat-row td {
+    background: linear-gradient(90deg, var(--green-dark) 0%, var(--green) 100%);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 9px 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--green-dark);
+  }
+  tbody td { padding: 7px 8px; vertical-align: middle; }
+  tbody td input, tbody td select {
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 7px 10px;
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: rgba(248,232,180,0.45);
+    color: var(--blue);
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  tbody td input:focus, tbody td select:focus {
+    border-color: var(--sun); background: #fff;
+  }
+  .calc-cell {
+    text-align: center; font-weight: 500;
+    color: var(--blue-mid); font-size: 13px;
+  }
+  .num-col { width: 36px; text-align: center; color: var(--grey); font-size: 12px; }
+  .del-btn {
+    background: var(--red-light);
+    border: 1.5px solid #E8B4AF;
+    cursor: pointer;
+    color: var(--red);
+    font-size: 13px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    transition: all 0.15s;
+    line-height: 1;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { background: var(--red); color: #fff; border-color: var(--red); transform: scale(1.1); }
+
+  /* ── TOTALS BAR ── */
+  .totals-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .total-item {
+    background: var(--sun);
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .total-item .t-label { font-size: 10px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.5px; }
+  .total-item .t-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: #fff; }
+  .total-item .t-unit { font-size: 10px; color: rgba(255,255,255,0.8); }
+
+  /* ── ADD ROW BUTTON ── */
+  .cat-add-row td {
+    padding: 6px 14px !important;
+    background: var(--green-light) !important;
+    border-top: 1px dashed rgba(26,122,74,0.3);
+    border-bottom: 2px solid rgba(26,122,74,0.12);
+  }
+  .cat-add-btn {
+    background: transparent;
+    border: none;
+    color: var(--green);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+    opacity: 0.8;
+  }
+  .cat-add-btn:hover {
+    opacity: 1;
+    color: var(--green-dark);
+    transform: translateX(3px);
+  }
+
+  .add-row-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: var(--green-light);
+    border: 1.5px dashed var(--green);
+    border-radius: var(--radius-sm);
+    color: var(--green);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; margin-top: 12px;
+    transition: all 0.15s; width: 100%;
+    justify-content: center;
+  }
+  .add-row-btn:hover { background: var(--green); color: #fff; border-style: solid; }
+
+  /* ── ACTION BUTTONS ── */
+  .btn {
+    padding: 10px 20px;
+    border: none; border-radius: var(--radius-sm);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 13px;
+    cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 7px;
+    letter-spacing: 0.2px;
+  }
+  .btn-orange { background: var(--sun); color: #fff; }
+  .btn-orange:hover { background: var(--sun-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,26,0.35); }
+  .btn-green  { background: var(--green); color: #fff; }
+  .btn-green:hover  { background: var(--green-dark); transform: translateY(-1px); }
+  .btn-blue   { background: var(--blue); color: #fff; }
+  .btn-blue:hover   { background: #0a3d6e; transform: translateY(-1px); }
+  .btn-ghost  { background: var(--white); color: var(--mid); border: 1.5px solid var(--border); }
+  .btn-ghost:hover  { border-color: var(--sun); color: var(--sun); }
+
+  /* ── RESULTS ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .result-item {
+    background: var(--light);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    border-left: 4px solid var(--sun);
+  }
+  .result-item .r-label { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .result-item .r-val   { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--dark); line-height: 1; }
+  .result-item .r-unit  { font-size: 11px; color: var(--grey); margin-top: 2px; }
+
+  .voltage-box {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--blue-light);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    border-left: 5px solid var(--blue);
+    margin-bottom: 16px;
+  }
+  .voltage-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px; font-weight: 800;
+    color: var(--blue); white-space: nowrap;
+  }
+  .voltage-note { font-size: 13px; color: var(--blue-mid); line-height: 1.5; }
+
+  /* ── SYSTEM RECOMMENDATION BLOCKS ── */
+  .sys-block {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .sys-block-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  .sys-block-header.inv  { background: var(--sun-light); color: var(--sun-dark); border-bottom: 1.5px solid #F5C9A8; }
+  .sys-block-header.bat  { background: var(--blue-light); color: var(--blue); border-bottom: 1.5px solid #B8CEED; }
+  .sys-block-header.sol  { background: var(--gold-light); color: #7A5200; border-bottom: 1.5px solid #E8C87A; }
+  .sys-block-body        { padding: 14px 16px; }
+  .sys-main {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--dark); margin-bottom: 4px;
+  }
+  .sys-sub { font-size: 12px; color: var(--grey); margin-bottom: 10px; }
+  .price-ref {
+    background: var(--teal-light);
+    border-left: 3px solid var(--teal);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 11px; color: var(--teal);
+    font-style: italic; line-height: 1.6;
+    margin-top: 8px;
+  }
+  .panel-options {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;
+  }
+  .panel-option {
+    background: var(--light);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px; text-align: center;
+    border: 1.5px solid var(--border);
+  }
+  .panel-option .po-count { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--dark); }
+  .panel-option .po-label { font-size: 11px; color: var(--grey); }
+
+  /* ── COST ESTIMATOR ── */
+  .cost-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cost-table thead th {
+    background: var(--dark); color: #fff;
+    padding: 10px 12px; text-align: left;
+    font-family: 'Syne', sans-serif; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.3px;
+  }
+  .cost-table thead th:not(:first-child) { text-align: center; }
+  .cost-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .cost-table tbody tr:hover { background: var(--light); }
+  .cost-table .section-head td {
+    background: var(--light); font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 11px; letter-spacing: 0.4px;
+    color: var(--grey); padding: 10px 12px 6px;
+    border-bottom: none; text-transform: uppercase;
+  }
+  .cost-table input[type=number] {
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    color: var(--blue); background: var(--gold-light);
+    outline: none; text-align: right;
+    width: 100%; transition: border-color 0.2s;
+  }
+  .cost-table input[type=number]:focus {
+    border-color: var(--sun); background: #fff;
+  }
+  .cost-table .qty-cell { text-align: center; color: var(--blue-mid); font-weight: 600; }
+  .cost-table .total-cell { text-align: right; font-weight: 600; color: var(--dark); }
+  .cost-table .subtot-row td {
+    background: var(--blue-light); font-weight: 700;
+    color: var(--blue); font-family: 'Syne', sans-serif;
+  }
+  .cost-table .subtot-row td:last-child { text-align: right; }
+  .cost-table .grand-row td {
+    background: var(--sun); color: #fff; font-weight: 800;
+    font-family: 'Syne', sans-serif; font-size: 15px;
+    padding: 12px;
+  }
+  .cost-table .grand-row td:last-child { text-align: right; }
+  .cost-label-auto { font-size: 12px; color: var(--mid); }
+  .cost-label-auto span { color: var(--sun); font-weight: 600; }
+
+  .panel-picker {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+    background: var(--gold-light);
+    border: 1.5px solid var(--gold);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+  }
+  .panel-picker label { font-size: 13px; font-weight: 500; color: var(--dark); white-space: nowrap; }
+  .panel-picker select {
+    border: 1.5px solid var(--gold);
+    border-radius: 5px; padding: 6px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; color: var(--dark);
+    background: var(--white); outline: none; cursor: pointer;
+  }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    background: var(--red-light);
+    border: 1.5px solid #E8B4AF;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    font-size: 12px; color: var(--red);
+    line-height: 1.7; font-style: italic;
+    margin-top: 20px;
+  }
+  .disclaimer strong { font-style: normal; }
+
+  /* ── PRINT/DOWNLOAD BAR ── */
+  .action-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(248,247,245,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
+  }
+  .action-bar-left { font-family: 'Syne', sans-serif; font-size: 12px; color: var(--grey); font-weight: 600; letter-spacing: 0.3px; }
+  .action-bar-right { display: flex; gap: 8px; }
+
+  /* ── UTILS ── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .empty-state { text-align: center; padding: 20px; color: var(--grey); font-size: 13px; font-style: italic; }
+
+  /* ── COLLAPSIBLE CATEGORY ROWS ── */
+  tbody tr.cat-row {
+    cursor: pointer;
+    user-select: none;
+  }
+  .cat-arrow {
+    font-size: 14px;
+    opacity: 0.85;
+    transition: transform 0.25s ease;
+    display: inline-block;
+    pointer-events: none;
+  }
+  tbody tr.cat-row.collapsed .cat-arrow {
+    transform: rotate(-90deg);
+  }
+  tbody tr.cat-row:hover td {
+    background: linear-gradient(90deg, #0A3D25 0%, var(--green-dark) 100%);
+  }
+  .app-data-row.hidden-row {
+    display: none;
+  }
+
+  @media print {
+    .action-bar, .add-row-btn, .del-btn, .cat-filter, .appliance-controls-right { display: none !important; }
+    .card { box-shadow: none; border: 1px solid #ddd; margin-top: 16px; }
+    body { background: #fff; }
+    .container { padding-bottom: 0; }
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .results-grid { grid-template-columns: 1fr 1fr; }
+    .panel-options { grid-template-columns: 1fr 1fr; }
+    .action-bar-left { display: none; }
+    .card-body { padding: 14px; }
+  }
+
+  /* ── NIGHT TOGGLE ── */
+  .night-toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px; height: 20px;
+    cursor: pointer;
+  }
+  .night-toggle input { opacity: 0; width: 0; height: 0; }
+  .night-slider {
+    position: absolute; inset: 0;
+    background: #ddd;
+    border-radius: 20px;
+    transition: 0.2s;
+  }
+  .night-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .night-toggle input:checked + .night-slider { background: #1A3A6A; }
+  .night-toggle input:checked + .night-slider::before { transform: translateX(16px); }
+
+  /* ── OFF-GRID NOTE ── */
+  .offgrid-note {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #0D3B2E 0%, #1A5C42 100%);
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .offgrid-note .on-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .offgrid-note .on-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 5px;
+    opacity: 0.92;
+  }
+  .offgrid-note .on-dot {
+    color: #7DFFB3;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY ACTION BAR -->
+<div class="action-bar">
+  <div class="action-bar-left">☀ SOLAR LOAD CALCULATOR</div>
+  <div class="action-bar-right">
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Print</button>
+    <button class="btn btn-blue" onclick="downloadPDF()">⬇ Download PDF</button>
+    <button class="btn btn-orange" onclick="calculate()">⚡ Calculate</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-sun">☀</div>
+  <h1>Solar Load Calculator</h1>
+  <p>Nigeria's free solar sizing & cost estimation tool — enter your appliances and get instant recommendations</p>
+</div>
+
+<div class="container">
+
+  <!-- ══ SECTION 1: SETUP ══ -->
+  <div class="card">
+    <div class="card-header orange"><span class="icon">⚙</span> PROJECT SETUP</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Project / Client Name</label>
+          <input type="text" id="projectName" value="My Solar Project" placeholder="e.g. Home, Office, Shop">
+        </div>
+        <div class="form-group">
+          <label>Location / City</label>
+          <input type="text" id="location" value="Lagos" placeholder="e.g. Lagos, Abuja, Kano">
+        </div>
+        <div class="form-group">
+          <label>Peak Sun Hours</label>
+          <input type="number" id="psh" value="5.0" min="3" max="7" step="0.5">
+          <span class="hint">Lagos/Abuja ~5.0 · Kano ~6.0 · Coastal ~4.5</span>
+        </div>
+        <div class="form-group">
+          <label>Desired Backup Hours</label>
+          <input type="number" id="backupHours" value="8" min="1" max="24" step="1">
+          <span class="hint">Hours of power without sun or grid</span>
+        </div>
+        <div class="form-group">
+          <label>Electricity Tariff (NGN/kWh)</label>
+          <input type="number" id="tariff" value="68" min="1">
+          <span class="hint">Your current DisCo band tariff rate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 2: APPLIANCE LIST ══ -->
+  <div class="card">
+    <div class="card-header green"><span class="icon">🔌</span> APPLIANCE LIST</div>
+    <div class="card-body">
+
+      <div class="appliance-controls">
+        <div class="cat-filter" id="catFilter">
+          <button class="cat-btn active" onclick="filterCat('all',this)">All</button>
+          <button class="cat-btn" onclick="filterCat('Lighting',this)">Lighting</button>
+          <button class="cat-btn" onclick="filterCat('Fans & Cooling',this)">Fans & Cooling</button>
+          <button class="cat-btn" onclick="filterCat('Kitchen',this)">Kitchen</button>
+          <button class="cat-btn" onclick="filterCat('Electronics',this)">Electronics</button>
+          <button class="cat-btn" onclick="filterCat('Water & Pumping',this)">Water & Pumping</button>
+        </div>
+        <div class="appliance-controls-right">
+          <button class="btn btn-ghost" onclick="resetAll()" title="Reset all quantities to 0">↺ Reset</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="appTable">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th style="text-align:left;min-width:190px">Appliance</th>
+              <th style="min-width:75px">Watts</th>
+              <th style="min-width:62px">Qty</th>
+              <th style="min-width:78px">Hrs/Day</th>
+              <th style="min-width:78px">Days/Wk</th>
+              <th style="min-width:72px;background:#1A3A6A" title="Does this appliance run at night on battery?">🌙 Night</th>
+              <th style="min-width:90px">Daily kWh</th>
+              <th style="min-width:90px">Weekly kWh</th>
+              <th style="min-width:95px">Monthly kWh</th>
+            </tr>
+          </thead>
+          <tbody id="appBody"></tbody>
+        </table>
+      </div>
+
+      <button class="add-row-btn" onclick="addCustomRow()">+ Add Appliance to "Other" Category</button>
+
+      <div class="totals-bar" id="totalsBar">
+        <div class="total-item"><div class="t-label">Running Watts</div><div class="t-val" id="ttlW">0</div><div class="t-unit">W</div></div>
+        <div class="total-item"><div class="t-label">Daily</div><div class="t-val" id="ttlD">0.00</div><div class="t-unit">kWh</div></div>
+        <div class="total-item"><div class="t-label">Weekly</div><div class="t-val" id="ttlWk">0.00</div><div class="t-unit">kWh</div></div>
+        <div class="total-item"><div class="t-label">Monthly</div><div class="t-val" id="ttlM">0.00</div><div class="t-unit">kWh</div></div>
+        <div class="total-item" style="background:#1A3A6A"><div class="t-label">🌙 Night Load</div><div class="t-val" id="ttlN">0</div><div class="t-unit">W</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 3: RESULTS ══ -->
+  <div class="card" id="resultsCard">
+    <div class="card-header dark"><span class="icon">📊</span> YOUR SOLAR SYSTEM RECOMMENDATIONS</div>
+    <div class="card-body">
+
+      <div id="resultsEmpty" class="empty-state">
+        Enter your appliance quantities above and click <strong>⚡ Calculate</strong> to see your recommendations.
+      </div>
+
+      <div id="resultsContent" style="display:none">
+
+        <!-- Energy Picture -->
+        <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--grey);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:12px;">Your Energy Picture</p>
+        <div class="results-grid">
+          <div class="result-item"><div class="r-label">Daily Consumption</div><div class="r-val" id="rDaily">—</div><div class="r-unit">kWh / day</div></div>
+          <div class="result-item"><div class="r-label">Monthly Consumption</div><div class="r-val" id="rMonthly">—</div><div class="r-unit">kWh / month</div></div>
+          <div class="result-item"><div class="r-label">Annual Consumption</div><div class="r-val" id="rAnnual">—</div><div class="r-unit">kWh / year</div></div>
+          <div class="result-item" style="border-left-color:var(--green)"><div class="r-label">Est. Monthly Grid Bill</div><div class="r-val" id="rBill">—</div><div class="r-unit">NGN / month</div></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Voltage -->
+        <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--grey);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:12px;">System Voltage Recommendation</p>
+        <div class="voltage-box">
+          <div class="voltage-badge" id="rVoltage">—</div>
+          <div class="voltage-note" id="rVoltageNote">—</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- System Components -->
+        <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--grey);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:12px;">Recommended Components</p>
+
+        <!-- Inverter -->
+        <div class="sys-block">
+          <div class="sys-block-header inv">⚡ INVERTER (Hybrid / Off-Grid with built-in MPPT)</div>
+          <div class="sys-block-body">
+            <div class="sys-main" id="rInverter">—</div>
+            <div class="sys-sub">Pure sine wave hybrid inverter · Built-in MPPT solar charger · <span id="rInvNote">—</span></div>
+            <div class="price-ref">
+              📌 Market reference (Nigeria 2025/2026): <strong>SRNE</strong> 3–5 kVA ₦471k–₦750k &nbsp;|&nbsp; <strong>Deye</strong> 3–5 kVA ₦600k–₦1.6M &nbsp;|&nbsp; <strong>Growatt</strong> 3–5 kVA ₦625k–₦1.1M &nbsp;|&nbsp; <strong>ITEL</strong> 3.6 kVA ~₦400k–₦600k &nbsp;|&nbsp; Always get quotes from your installer.
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery -->
+        <div class="sys-block">
+          <div class="sys-block-header bat">🔋 BATTERY BANK (LiFePO4)</div>
+          <div class="sys-block-body">
+            <div class="sys-main" id="rBattery">—</div>
+            <div class="sys-sub" id="rBatteryNote">—</div>
+            <div class="price-ref">
+              📌 Market reference (Nigeria 2025/2026): <strong>48V / 100Ah</strong> (~5 kWh) ₦750k–₦1.2M &nbsp;|&nbsp; <strong>48V / 200Ah</strong> (~10 kWh) ₦1.4M–₦2.4M &nbsp;|&nbsp; <strong>24V / 200Ah</strong> (~5 kWh) ₦900k–₦1.7M &nbsp;|&nbsp; (Growatt, SRNE, Deye, Felicity) — prices vary with exchange rate.
+            </div>
+          </div>
+        </div>
+
+        <!-- Solar Panels -->
+        <div class="sys-block">
+          <div class="sys-block-header sol">☀ SOLAR PANELS (Monocrystalline)</div>
+          <div class="sys-block-body">
+            <div class="sys-main" id="rPanelWp">—</div>
+            <div class="sys-sub">Minimum total DC array wattage needed</div>
+            <div class="panel-options">
+              <div class="panel-option">
+                <div class="po-count" id="rP550">—</div>
+                <div class="po-label">550W panels needed</div>
+              </div>
+              <div class="panel-option">
+                <div class="po-count" id="rP625">—</div>
+                <div class="po-label">625W panels needed</div>
+              </div>
+            </div>
+            <div class="price-ref">
+              📌 Market reference (Nigeria 2025/2026): <strong>550W mono</strong> ₦100k–₦171k per panel &nbsp;|&nbsp; <strong>625W mono</strong> ~₦130k–₦200k per panel &nbsp;|&nbsp; (Jinko, Canadian Solar, LONGi, JA Solar)
+            </div>
+            <div class="offgrid-note" id="rOffgridNote" style="display:none"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 4: COST ESTIMATOR ══ -->
+  <div class="card" id="costCard">
+    <div class="card-header" style="background:var(--blue-mid)"><span class="icon">💰</span> COST ESTIMATOR</div>
+    <div class="card-body">
+
+      <div id="costEmpty" class="empty-state">
+        Complete the calculation above to unlock the cost estimator.
+      </div>
+
+      <div id="costContent" style="display:none">
+        <div class="panel-picker">
+          <label>Preferred Panel Wattage:</label>
+          <select id="panelWattPick" onchange="updateCostTable()">
+            <option value="550">550W panels</option>
+            <option value="625">625W panels</option>
+          </select>
+          <span style="font-size:12px;color:var(--grey);font-style:italic">Cost estimator qty updates automatically</span>
+        </div>
+
+        <table class="cost-table">
+          <thead>
+            <tr>
+              <th style="width:45%">Component</th>
+              <th style="width:20%;text-align:center">Unit Cost (NGN)</th>
+              <th style="width:10%;text-align:center">Qty</th>
+              <th style="width:25%;text-align:right">Line Total (NGN)</th>
+            </tr>
+          </thead>
+          <tbody id="costBody">
+          </tbody>
+        </table>
+
+        <div class="disclaimer">
+          <strong>DISCLAIMER:</strong> This calculator provides <strong>estimates only</strong>. Actual system requirements, component specifications and costs may vary based on site conditions, equipment brand, installation complexity and current market prices. Equipment prices are subject to change without notice and are significantly influenced by USD/NGN exchange rate movements. This tool does not constitute professional engineering advice. <strong>Always consult a qualified and licensed solar installer before purchasing any equipment.</strong> The creators of this tool accept no liability for any decisions made based on these estimates.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════════════
+const APPS_DEFAULT = [
+  // [category, name, watts, night(default)]
+  ['Lighting',       'LED Bulb 9W',                    9,    true],
+  ['Lighting',       'LED Spotlight / Downlight 13W',  13,   true],
+  ['Lighting',       'LED Flood / Security Light 50W', 50,   true],
+  ['Fans & Cooling', 'Ceiling Fan 55W',                55,   true],
+  ['Fans & Cooling', 'Standing / Pedestal Fan 75W',    75,   true],
+  ['Fans & Cooling', 'AC 1HP — Inverter Type',        750,   true],
+  ['Fans & Cooling', 'AC 1.5HP — Inverter Type',     1100,   true],
+  ['Fans & Cooling', 'AC 2HP — Inverter Type',       1500,   true],
+  ['Kitchen',        'Refrigerator — Inverter Type',  120,   true],
+  ['Kitchen',        'Chest Freezer',                 200,   true],
+  ['Kitchen',        'Electric Kettle 1500W',        1500,  false],
+  ['Kitchen',        'Microwave Oven 1200W',         1200,  false],
+  ['Kitchen',        'Blender / Juicer 400W',         400,  false],
+  ['Kitchen',        'Electric Iron 1000W',          1000,  false],
+  ['Electronics',    'LED TV 32 inch',                 60,   true],
+  ['Electronics',    'LED TV 55 inch',                120,   true],
+  ['Electronics',    'DSTV / Decoder',                 20,   true],
+  ['Electronics',    'Laptop',                         45,   true],
+  ['Electronics',    'Desktop Computer',              200,  false],
+  ['Electronics',    'WiFi Router',                    15,   true],
+  ['Electronics',    'Phone Chargers ×4',              40,   true],
+  ['Electronics',    'CCTV System (4 cameras)',        60,   true],
+  ['Water & Pumping','Borehole / Submersible Pump',   750,  false],
+  ['Water & Pumping','Surface Water Pump 500W',       500,  false],
+  ['Water & Pumping','Washing Machine 500W',          500,  false],
+  ['Water & Pumping','Water Heater / Geyser 3000W',  3000,  false],
+];
+
+const CATS = ['Lighting','Fans & Cooling','Kitchen','Electronics','Water & Pumping','Other'];
+
+// Constants
+const INV_EFF  = 0.90;
+const DOD      = 0.80;
+const BAT_EFF  = 0.95;
+const DERATE   = 0.80;
+const CC_EFF   = 0.97;
+const HEADROOM = 1.25;
+
+let rows = [];
+let calcResults = null;
+let currentFilter = 'all';
+
+// ══════════════════════════════════════════════════════════
+//  CATEGORY COLLAPSE
+// ══════════════════════════════════════════════════════════
+const collapsedCats = new Set();
+
+function toggleCat(cat) {
+  if (collapsedCats.has(cat)) {
+    collapsedCats.delete(cat);
+  } else {
+    collapsedCats.add(cat);
+  }
+  // Update DOM directly without full re-render for smooth UX
+  document.querySelectorAll('.cat-row').forEach(tr => {
+    if (tr.dataset.cat === cat) {
+      tr.classList.toggle('collapsed', collapsedCats.has(cat));
+    }
+  });
+  document.querySelectorAll('.app-data-row').forEach(tr => {
+    if (tr.dataset.cat === cat) {
+      tr.classList.toggle('hidden-row', collapsedCats.has(cat));
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+function init() {
+  rows = APPS_DEFAULT.map((a, i) => ({
+    id: i + 1, cat: a[0], name: a[1], watts: a[2], qty: 0, hrs: 0, days: 7, night: a[3] !== undefined ? a[3] : false
+  }));
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════
+//  TABLE RENDERING
+// ══════════════════════════════════════════════════════════
+function renderTable() {
+  const tbody = document.getElementById('appBody');
+  tbody.innerHTML = '';
+  let lastCat = null;
+  let visibleCount = 0;
+
+  // Group rows by category in order
+  const catOrder = [];
+  const catMap = {};
+  rows.forEach((row, idx) => {
+    if (!catMap[row.cat]) { catMap[row.cat] = []; catOrder.push(row.cat); }
+    catMap[row.cat].push({ row, idx });
+  });
+
+  let rowNum = 1;
+  catOrder.forEach(cat => {
+    const show = currentFilter === 'all' || cat === currentFilter;
+    if (!show) return;
+
+    const isCollapsed = collapsedCats.has(cat);
+
+    // Category header row
+    const catTr = document.createElement('tr');
+    catTr.className = 'cat-row' + (isCollapsed ? ' collapsed' : '');
+    catTr.dataset.cat = cat;
+    catTr.innerHTML = `
+      <td colspan="10" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;">
+        <span style="letter-spacing:0.5px;text-transform:uppercase;font-size:12px;font-weight:700">${cat}</span>
+        <span class="cat-arrow">▾</span>
+      </td>`;
+    catTr.addEventListener('click', () => toggleCat(cat));
+    tbody.appendChild(catTr);
+
+    // Data rows for this category
+    catMap[cat].forEach(({ row, idx }) => {
+      const daily   = (row.watts * row.qty * row.hrs) / 1000;
+      const weekly  = daily * (row.days / 7) * 7;
+      const monthly = daily * (row.days / 7) * 30.44;
+      // alternate row shade
+      const rowBg = rowNum % 2 === 0 ? 'rgba(13,79,140,0.03)' : 'rgba(255,255,255,0.7)';
+      const tr = document.createElement('tr');
+      tr.dataset.idx = idx;
+      tr.style.background = rowBg;
+      tr.innerHTML = `
+        <td style="text-align:center;padding:4px 6px;width:36px">
+          <button class="del-btn" onclick="deleteRow(${idx})" title="Remove this appliance">✕</button>
+        </td>
+        <td>
+          <input type="text" value="${esc(row.name)}" placeholder="Type appliance name..." onchange="updateRow(${idx},'name',this.value)" style="width:100%;background:transparent;color:var(--dark)">
+        </td>
+        <td><input type="number" value="${row.watts}" min="0" onchange="updateRow(${idx},'watts',+this.value)"></td>
+        <td><input type="number" value="${row.qty}"   min="0" onchange="updateRow(${idx},'qty',+this.value)"></td>
+        <td><input type="number" value="${row.hrs}"   min="0" max="24" step="0.5" onchange="updateRow(${idx},'hrs',+this.value)"></td>
+        <td><input type="number" value="${row.days}"  min="1" max="7"  onchange="updateRow(${idx},'days',+this.value)"></td>
+        <td style="text-align:center;padding:4px">
+          <label class="night-toggle" title="Run on battery at night?">
+            <input type="checkbox" ${row.night ? 'checked' : ''} onchange="updateRow(${idx},'night',this.checked)">
+            <span class="night-slider"></span>
+          </label>
+        </td>
+        <td class="calc-cell">${daily > 0 ? daily.toFixed(3) : '—'}</td>
+        <td class="calc-cell">${weekly > 0 ? weekly.toFixed(3) : '—'}</td>
+        <td class="calc-cell">${monthly > 0 ? monthly.toFixed(2) : '—'}</td>
+      `;
+      tr.classList.add('app-data-row');
+      tr.dataset.cat = cat;
+      if (isCollapsed) tr.classList.add('hidden-row');
+      tbody.appendChild(tr);
+      rowNum++;
+      visibleCount++;
+    });
+
+    // "+ Add item" row at the bottom of each category
+    const addTr = document.createElement('tr');
+    addTr.className = 'cat-add-row app-data-row';
+    addTr.dataset.cat = cat;
+    if (isCollapsed) addTr.classList.add('hidden-row');
+    addTr.innerHTML = `
+      <td colspan="10">
+        <button class="cat-add-btn" onclick="addRowToCategory(event,'${cat}')">
+          <span style="font-size:15px;line-height:1">+</span> Add item to ${cat}
+        </button>
+      </td>`;
+    tbody.appendChild(addTr);
+  });
+
+  if (visibleCount === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="10" class="empty-state">No appliances in this category.</td>`;
+    tbody.appendChild(tr);
+  }
+
+  updateTotals();
+}
+
+function updateRow(idx, field, val) {
+  rows[idx][field] = val;
+  renderTable();
+}
+
+function deleteRow(idx) {
+  rows.splice(idx, 1);
+  renderTable();
+}
+
+function addCustomRow() {
+  addRowToCategory(null, 'Other');
+}
+
+function addRowToCategory(event, cat) {
+  if (event) event.stopPropagation();
+  // If category is collapsed, expand it first
+  if (collapsedCats.has(cat)) {
+    collapsedCats.delete(cat);
+  }
+  // If filtering and not showing this cat, switch to all
+  if (currentFilter !== 'all' && currentFilter !== cat) {
+    currentFilter = 'all';
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.cat-btn').classList.add('active');
+  }
+  // Insert row after the last row of this category
+  const lastIdx = rows.reduce((acc, r, i) => r.cat === cat ? i : acc, -1);
+  const newRow = { id: Date.now(), cat: cat, name: '', watts: 0, qty: 0, hrs: 0, days: 7, night: false };
+  if (lastIdx >= 0) {
+    rows.splice(lastIdx + 1, 0, newRow);
+  } else {
+    rows.push(newRow);
+  }
+  renderTable();
+  // Focus the name input of the new row
+  setTimeout(() => {
+    const allRows = document.querySelectorAll('.app-data-row');
+    // Find the new empty-name row
+    for (const tr of allRows) {
+      const nameInput = tr.querySelector('input[type=text]');
+      if (nameInput && nameInput.value === '') {
+        nameInput.placeholder = 'Type appliance name...';
+        nameInput.focus();
+        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        break;
+      }
+    }
+  }, 50);
+}
+
+function resetAll() {
+  rows.forEach(r => { r.qty = 0; r.hrs = 0; });
+  renderTable();
+  document.getElementById('resultsContent').style.display = 'none';
+  document.getElementById('resultsEmpty').style.display = 'block';
+  document.getElementById('costContent').style.display = 'none';
+  document.getElementById('costEmpty').style.display = 'block';
+}
+
+function filterCat(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function updateTotals() {
+  let tW = 0, tD = 0, tWk = 0, tM = 0, tN = 0;
+  rows.forEach(r => {
+    const daily = (r.watts * r.qty * r.hrs) / 1000;
+    tW  += r.watts * r.qty;
+    tD  += daily;
+    tWk += daily * (r.days / 7) * 7;
+    tM  += daily * (r.days / 7) * 30.44;
+    if (r.night) tN += r.watts * r.qty;
+  });
+  document.getElementById('ttlW').textContent  = fmt0(tW);
+  document.getElementById('ttlD').textContent  = tD.toFixed(2);
+  document.getElementById('ttlWk').textContent = tWk.toFixed(2);
+  document.getElementById('ttlM').textContent  = tM.toFixed(2);
+  document.getElementById('ttlN').textContent  = fmt0(tN);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CALCULATE
+// ══════════════════════════════════════════════════════════
+function calculate() {
+  let totalW = 0, dailyKwh = 0;
+  rows.forEach(r => {
+    totalW   += r.watts * r.qty;
+    dailyKwh += (r.watts * r.qty * r.hrs) / 1000;
+  });
+
+  if (dailyKwh === 0) {
+    alert('Please enter at least one appliance with a quantity and daily hours before calculating.');
+    return;
+  }
+
+  const psh         = +document.getElementById('psh').value || 5;
+  const tariff      = +document.getElementById('tariff').value || 68;
+  const backupHrs   = +document.getElementById('backupHours').value || 8;
+
+  const monthlyKwh  = dailyKwh * 30.44;
+  const annualKwh   = dailyKwh * 365;
+  const monthlyBill = monthlyKwh * tariff;
+
+  // Voltage
+  const sysV    = totalW >= 1500 ? 48 : 24;
+  const voltTxt = sysV + 'V';
+
+  // Inverter
+  const invMin  = totalW * HEADROOM;
+  const invSize = [1000,1500,2000,3000,3600,5000,7500,10000,12000].find(s => s >= invMin) || 15000;
+  const invKva  = (invSize / 1000).toFixed(1) + ' kVA';
+
+  // Battery — sized on NIGHT LOAD × backup hours
+  const nightW  = rows.reduce((sum, r) => sum + (r.night ? r.watts * r.qty : 0), 0);
+  const batKwh  = (nightW / 1000) * backupHrs / BAT_EFF / DOD;
+
+  // Solar
+  const totalWp = Math.ceil((dailyKwh / INV_EFF / CC_EFF * 1000) / (psh * DERATE) / 100) * 100;
+  const p550    = Math.ceil(totalWp / 550);
+  const p625    = Math.ceil(totalWp / 625);
+
+  calcResults = { totalW, nightW, dailyKwh, monthlyKwh, annualKwh, monthlyBill, sysV, voltTxt, invKva, invSize, batKwh, totalWp, p550, p625, tariff };
+
+  // ── Update Results ──────────────────────────────────────
+  document.getElementById('resultsEmpty').style.display  = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
+
+  document.getElementById('rDaily').textContent   = dailyKwh.toFixed(2);
+  document.getElementById('rMonthly').textContent = monthlyKwh.toFixed(2);
+  document.getElementById('rAnnual').textContent  = annualKwh.toFixed(2);
+  document.getElementById('rBill').textContent    = fmtNGN(monthlyBill);
+
+  document.getElementById('rVoltage').textContent = voltTxt;
+  document.getElementById('rVoltageNote').textContent = sysV >= 48
+    ? 'Your total load is above 1,500W — a 48V system is more efficient, produces less heat, and handles higher loads more reliably.'
+    : 'Your total load is below 1,500W — a 24V system is sufficient and offers a more cost-effective setup.';
+
+  document.getElementById('rInverter').textContent  = invKva + ' Pure Sine Wave Hybrid Inverter';
+  document.getElementById('rInvNote').textContent   = `Running load: ${fmt0(totalW)}W × 1.25 headroom = ${fmt0(invMin)}W minimum`;
+
+  document.getElementById('rBattery').textContent   = batKwh.toFixed(2) + ' kWh';
+  document.getElementById('rBatteryNote').textContent = `Night load: ${fmt0(nightW)}W × ${backupHrs} hrs backup ÷ ${Math.round(BAT_EFF*100)}% efficiency ÷ ${Math.round(DOD*100)}% DoD`;
+
+  document.getElementById('rPanelWp').textContent  = fmt0(totalWp) + ' Wp';
+
+  // Off-grid / coverage note
+  const rechargeHrs = (batKwh / (totalWp / 1000 * DERATE)).toFixed(1);
+  const noteEl = document.getElementById('rOffgridNote');
+  noteEl.style.display = 'block';
+  noteEl.innerHTML = `
+    <div class="on-title">☀ How your solar array covers your energy needs</div>
+    <div class="on-row"><span class="on-dot">◆</span><span><strong>Daytime (during sun hours):</strong> Your ${fmt0(totalWp)}Wp array powers all your appliances directly and simultaneously recharges your battery bank.</span></div>
+    <div class="on-row"><span class="on-dot">◆</span><span><strong>Evening & night (${backupHrs} hrs backup):</strong> Your ${batKwh.toFixed(2)} kWh battery bank powers your night load of ${fmt0(nightW)}W — covering lighting, fans, ACs, fridge, TV and other night appliances.</span></div>
+    <div class="on-row"><span class="on-dot">◆</span><span><strong>Battery recharge time:</strong> At ${psh} peak sun hours/day, your panels can recharge the full battery bank in approximately <strong>${rechargeHrs} hrs</strong> of good sunshine.</span></div>
+    <div class="on-row"><span class="on-dot">◆</span><span><strong>Hybrid setup:</strong> If you are connected to the grid or generator, these act as a backup when the battery runs low — reducing the pressure on your battery bank. For fully off-grid setups, consider adding 10–20% more panel capacity as a buffer.</span></div>
+  `;
+  document.getElementById('rP550').textContent = p550;
+  document.getElementById('rP625').textContent = p625;
+
+  // ── Update Cost Table ───────────────────────────────────
+  document.getElementById('costEmpty').style.display   = 'none';
+  document.getElementById('costContent').style.display = 'block';
+  buildCostTable();
+
+  // Scroll to results
+  document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ══════════════════════════════════════════════════════════
+//  COST TABLE
+// ══════════════════════════════════════════════════════════
+let costPrices = {};
+
+function buildCostTable() {
+  // Reset auto-populated prices so they refresh with new calc
+  delete costPrices['inv']; delete costPrices['bat']; delete costPrices['panel'];
+  updateCostTable();
+}
+
+// Inverter reference prices by size (NGN mid-market estimate)
+const INV_PRICES = {
+  1000: 350000, 1500: 450000, 2000: 550000,
+  3000: 650000, 3600: 800000, 5000: 1100000,
+  7500: 1600000, 10000: 2200000, 12000: 3000000
+};
+// Battery price per kWh nameplate (₦190,000/kWh mid-market LiFePO4)
+const BAT_PRICE_PER_KWH = 190000;
+// Panel prices per unit
+const PANEL_PRICES = { 550: 120000, 625: 160000 };
+
+function updateCostTable() {
+  if (!calcResults) return;
+  const { invKva, invSize, batKwh, totalWp, p550, p625 } = calcResults;
+  const panelW = +document.getElementById('panelWattPick').value;
+  const pCount = panelW === 550 ? p550 : p625;
+
+  // Auto-populate reference prices if user hasn't overridden
+  const invRefPrice  = INV_PRICES[invSize] || 0;
+  const batRefPrice  = Math.round(batKwh * BAT_PRICE_PER_KWH);
+  const panelRefPrice = PANEL_PRICES[panelW] || 120000;
+
+  if (!costPrices['inv'])   costPrices['inv']   = invRefPrice;
+  if (!costPrices['bat'])   costPrices['bat']   = batRefPrice;
+  if (!costPrices['panel']) costPrices['panel'] = panelRefPrice;
+
+  const sections = [
+    { head: 'Equipment', rows: [
+      { key:'inv',   label:`Hybrid Inverter — ${invKva}`,                           qty: 1,      hint:`Ref. price ~₦${fmt0(invRefPrice)} (Deye/SRNE/Growatt mid-market 2026) — update with your quote` },
+      { key:'bat',   label:`LiFePO4 Battery Bank — ${batKwh.toFixed(2)} kWh`,      qty: 1,      hint:`Ref. ~₦${fmt0(batRefPrice)} at ₦190k/kWh (Felicity/SRNE/Deye) — update with your quote` },
+      { key:'panel', label:`Solar Panels (${panelW}W each) — ${pCount} panels`,     qty: pCount, hint:`Ref. ~₦${fmt0(panelRefPrice)} each (Jinko/LONGi/Canadian Solar) — update with your quote` },
+      { key:'mount', label:`Panel Mounting Structure (per panel)`,                  qty: pCount, hint:'Roof or ground mount — galvanised steel · varies by installer' },
+      { key:'cable', label:`DC & AC Cables (lot)`,                                  qty: 1,      hint:'Solar 4mm² & 6mm² cable — price varies by system size' },
+      { key:'brkr',  label:`Breakers, Fuses & Surge Protection (lot)`,              qty: 1,      hint:'DC breakers, AC MCB, SPDs' },
+      { key:'conn',  label:`Connectors, Bus Bars & Lugs (lot)`,                     qty: 1,      hint:'MC4 connectors, copper lugs, battery terminals' },
+    ]},
+    { head: 'Installation', rows: [
+      { key:'labour', label:'Installation Labour',           qty: 1, hint:'Electrician + solar technician' },
+      { key:'conduit',label:'Conduit, Trunking & Fixings',   qty: 1, hint:'PVC conduit or cable tray' },
+      { key:'earth',  label:'Earthing / Grounding System',   qty: 1, hint:'Copper earth rod, cable, bonding' },
+      { key:'transport', label:'Transport & Delivery',       qty: 1, hint:'Delivery of equipment to site' },
+    ]},
+  ];
+
+  const tbody = document.getElementById('costBody');
+  tbody.innerHTML = '';
+
+  let equipTotal = 0, instTotal = 0;
+
+  sections.forEach((section, sIdx) => {
+    // Section head
+    const headTr = document.createElement('tr');
+    headTr.className = 'section-head';
+    headTr.innerHTML = `<td colspan="4">${section.head}</td>`;
+    tbody.appendChild(headTr);
+
+    section.rows.forEach(item => {
+      const price = costPrices[item.key] || 0;
+      const lineTotal = price * item.qty;
+      if (sIdx === 0) equipTotal += lineTotal;
+      else instTotal += lineTotal;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="cost-label-auto">${item.label}</div>
+          <div style="font-size:11px;color:var(--grey);font-style:italic;margin-top:2px">${item.hint}</div>
+        </td>
+        <td>
+          <input type="number" value="${price > 0 ? price : ''}" min="0" placeholder="Enter price"
+            onchange="setCostPrice('${item.key}',+this.value,'${sIdx}')" data-key="${item.key}">
+        </td>
+        <td class="qty-cell">${item.qty}</td>
+        <td class="total-cell">${lineTotal > 0 ? '₦' + fmtNum(lineTotal) : '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Subtotal
+    const total = sIdx === 0 ? equipTotal : instTotal;
+    const subTr = document.createElement('tr');
+    subTr.className = 'subtot-row';
+    subTr.innerHTML = `
+      <td colspan="3">${section.head} Subtotal</td>
+      <td>${total > 0 ? '₦' + fmtNum(total) : '—'}</td>
+    `;
+    tbody.appendChild(subTr);
+    tbody.appendChild(document.createElement('tr')); // spacer
+  });
+
+  // Base total
+  const base = equipTotal + instTotal;
+  const contingencyRate = 0.10;
+  const contingency = base * contingencyRate;
+  const grand = base + contingency;
+
+  const baseTr = document.createElement('tr');
+  baseTr.className = 'subtot-row';
+  baseTr.innerHTML = `<td colspan="3">Base Project Cost</td><td>${base > 0 ? '₦' + fmtNum(base) : '—'}</td>`;
+  tbody.appendChild(baseTr);
+
+  const contTr = document.createElement('tr');
+  contTr.innerHTML = `
+    <td style="color:var(--grey);font-size:12px">Contingency / Miscellaneous (10%)</td>
+    <td colspan="2"></td>
+    <td class="total-cell">${contingency > 0 ? '₦' + fmtNum(contingency) : '—'}</td>
+  `;
+  tbody.appendChild(contTr);
+
+  const grandTr = document.createElement('tr');
+  grandTr.className = 'grand-row';
+  grandTr.innerHTML = `<td colspan="3">TOTAL ESTIMATED PROJECT COST</td><td>${grand > 0 ? '₦' + fmtNum(grand) : '—'}</td>`;
+  tbody.appendChild(grandTr);
+}
+
+function setCostPrice(key, val, sIdx) {
+  costPrices[key] = val;
+  updateCostTable();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PDF DOWNLOAD
+// ══════════════════════════════════════════════════════════
+function downloadPDF() {
+  const name = document.getElementById('projectName').value || 'Solar Report';
+  document.title = name + ' — Solar Load Calculator';
+  window.print();
+}
+
+// ══════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt0(n) {
+  return Math.round(n).toLocaleString('en-NG');
+}
+function fmtNum(n) {
+  return Math.round(n).toLocaleString('en-NG');
+}
+function fmtNGN(n) {
+  return Math.round(n).toLocaleString('en-NG');
+}
+
+// ══════════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════════
+init();
+</script>
+
+<!-- FOOTER -->
+<div style="
+  background: #1A1A1A;
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  padding: 24px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 40px;
+">
+  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff;margin-bottom:6px">
+    ☀ Nigeria Solar Load Calculator
+  </div>
+  <div>Version 1.0 &nbsp;·&nbsp; Released April 2026</div>
+  <div style="margin-top:4px">
+    Open source under the 
+    <a href="https://opensource.org/licenses/MIT" target="_blank" 
+       style="color:#D4641A;text-decoration:none;font-weight:500">MIT License</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/YOUR-USERNAME/nigeria-solar-calculator" target="_blank"
+       style="color:#D4641A;text-decoration:none;font-weight:500">View on GitHub</a>
+  </div>
+  <div style="margin-top:8px;font-size:11px;opacity:0.6">
+    Prices are indicative and subject to change with market conditions and USD/NGN exchange rate.<br>
+    Always consult a qualified solar installer before purchasing equipment.
+  </div>
+</div>
+
+</body>
+</html>
