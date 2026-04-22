@@ -8,13 +8,13 @@ Thank you for wanting to contribute! This tool exists to help Nigerians make bet
 
 ### 1. Report a Bug
 If something calculates incorrectly or looks broken:
-- Go to [Issues](https://github.com/YOUR-USERNAME/nigeria-solar-calculator/issues)
+- Go to [Issues](https://github.com/nomochrome/nigeria-solar-calculator/issues)
 - Click **New Issue** → select **Bug Report**
 - Include: what you expected, what happened, and your browser/device
 
 ### 2. Suggest a Feature
 Have an idea that would help users?
-- Go to [Issues](https://github.com/YOUR-USERNAME/nigeria-solar-calculator/issues)
+- Go to [Issues](https://github.com/nomochrome/nigeria-solar-calculator/issues)
 - Click **New Issue** → select **Feature Request**
 - Describe the feature and why it would be useful
 
